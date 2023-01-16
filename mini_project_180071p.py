@@ -167,16 +167,6 @@ sample_dataset = pd.read_csv('/kaggle/input/amex-default-prediction/sample_submi
 output = pd.DataFrame({'customer_ID': sample_dataset.customer_ID, 'prediction': predictions_2[:,1]})
 output.to_csv('submission_5.csv', index=False)
 
-"""**Naive Byes Classifier**"""
-
-gnb = GaussianNB()
-gnb.fit(x_train, y_train)
-predictions_3= gnb.predict_proba(test_dataset[num_columns])
-
-sample_dataset = pd.read_csv('/kaggle/input/amex-default-prediction/sample_submission.csv')
-output = pd.DataFrame({'customer_ID': sample_dataset.customer_ID, 'prediction': predictions_3[:, 1]})
-output.to_csv('submission_6.csv', index=False)
-
 """**4. SVM**"""
 
 clf = svm.SVC()
@@ -207,15 +197,22 @@ sample_dataset = pd.read_csv('/kaggle/input/amex-default-prediction/sample_submi
 output = pd.DataFrame({'customer_ID': sample_dataset.customer_ID, 'prediction': predictions_6[:, 1]})
 output.to_csv('submission_4.csv', index=False)
 
-"""**7. Voting Classifier**"""
 
-model_1 = CatBoostClassifier()
-model_2 = GradientBoostingClassifier()
-model_3 = HistGradientBoostingClassifier(max_iter=100)
-model_h = VotingClassifier(estimators=[('cb', model_1), ('xgb', model_2), ('gbc', model_3)], voting='soft')
-model_h.fit(x_train, y_train)
-predictions_9 = model_h.predict_proba(test_dataset[num_columns])
+def calculate_metric_values(test_y, pred_y):
+    mae = mean_absolute_error(test_y, pred_y)
+    mse = mean_squared_error(test_y, pred_y)
+    mape = mean_absolute_percentage_error(test_y, pred_y)
+    r2 = r2_score(test_y, pred_y)
+    ascore = accuracy_score(test_y, pred_y)
+    
+    return [mae, mse, mape, r2, ascore]
 
-sample_dataset = pd.read_csv('/kaggle/input/amex-default-prediction/sample_submission.csv')
-output = pd.DataFrame({'customer_ID': sample_dataset.customer_ID, 'prediction': predictions_9[:, 1]})
-output.to_csv('submission_8.csv', index=False)
+[mae_1, mse_1, mape_1, r2_1, ascore_1] = calculate_metric_values(test_y, pred_y_xgb)
+[mae_2, mse_2, mape_2, r2_2, ascore_2] = calculate_metric_values(test_y, pred_y_gbm)
+[mae_3, mse_3, mape_3, r2_3, ascore_3] = calculate_metric_values(test_y, pred_y_cb)
+# [mae_4, mse_4, mape_4, r2_4, ascore_4] = calculate_metric_values(test_y, pred_y_svm)
+# [mae_5, mse_5, mape_5, r2_5, ascore_5] = calculate_metric_values(test_y, pred_y_knn)
+
+data = {'Approaches | Evaluation Metrics':['XGBoost', 'Random Forest Classifier','LightGBM','Adaboost', 'SVM', 'KNN'],'Mean Absolute Error':[mae_1 ,mae_2, mae_3 , '-', '-'], 'Mean Sqaured Error':[mse_1 ,mse_2, mse_3, '-', '-' ],'Mean Absolute Percentage Error':[mape_1 ,mape_2, mape_3, '-', '-' ], 'R2 Score':[r2_1 ,r2_2, r2_3, '-', '-' ], 'Accuracy Score':[ascore_1 ,ascore_2, ascore_3, '-', '-' ]}
+df_1 = pd.DataFrame(data=data)
+df_1
